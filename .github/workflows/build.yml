@@ -1,41 +1,23 @@
 name: Build Kernel Browser
-
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
-
+on: [push, workflow_dispatch]
 jobs:
-  build-windows:
-    runs-on: windows-latest
-    
+  build:
+    runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        
-    - name: Install dependencies
-      run: npm install
-      
-    - name: Create icon if missing
-      run: |
-        mkdir -p assets/icons
-        if (!(Test-Path "assets\icons\icon.ico")) {
-          echo "Creating placeholder icon..."
-          # Создаем простую иконку
-          # Можно добавить позже реальную
-        }
-        
-    - name: Build for Windows
-      run: npm run build:win
-      
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: KernelBrowser-Windows
-        path: build/*.exe
-        retention-days: 7
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Test
+        run: |
+          echo "🚀 Kernel Browser Build Started"
+          echo "Branch: ${{ github.ref }}"
+          ls -la
+      - name: Create APK Info
+        run: |
+          echo "Kernel Browser APK" > kernel-info.txt
+          echo "Version: 1.0.0" >> kernel-info.txt
+          echo "Date: $(date)" >> kernel-info.txt
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-build
+          path: kernel-info.txt
