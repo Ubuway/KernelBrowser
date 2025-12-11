@@ -1,0 +1,41 @@
+name: Build Kernel Browser
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Create icon if missing
+      run: |
+        mkdir -p assets/icons
+        if (!(Test-Path "assets\icons\icon.ico")) {
+          echo "Creating placeholder icon..."
+          # Создаем простую иконку
+          # Можно добавить позже реальную
+        }
+        
+    - name: Build for Windows
+      run: npm run build:win
+      
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: KernelBrowser-Windows
+        path: build/*.exe
+        retention-days: 7

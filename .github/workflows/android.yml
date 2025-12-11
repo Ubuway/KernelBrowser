@@ -1,0 +1,66 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [android-build]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Android
+      uses: android-actions/setup-android@v3
+      
+    - name: Create WebView App
+      run: |
+        # Создаем простой Android проект
+        mkdir -p app/src/main/assets
+        cp -r *.html *.css *.js *.json app/src/main/assets/
+        
+        cat > app/build.gradle << 'GRADLE'
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.ubuway.kernel'
+    compileSdk 34
+    
+    defaultConfig {
+        applicationId "com.ubuway.kernel"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+    
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.webkit:webkit:1.8.0'
+}
+GRADLE
+        
+    - name: Build APK
+      run: |
+        cd app
+        ./gradlew assembleDebug
+        ls -la build/outputs/apk/debug/
+        
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: kernel-browser
+        path: app/build/outputs/apk/debug/*.apk

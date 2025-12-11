@@ -1,0 +1,49 @@
+# Создайте файл workflow
+cat > .github/workflows/build.yml << 'EOF'
+name: Build Kernel Browser for Windows
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # Разрешает запуск вручную
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        npm install
+        # Проверяем наличие иконки
+        if (Test-Path "assets\icons\icon.ico") {
+          Write-Host "✅ Иконка найдена"
+        } else {
+          Write-Host "⚠️ Иконка не найдена, создаем временную"
+          # Создаем простую иконку если нет
+          New-Item -ItemType Directory -Force -Path assets\icons
+          # Можно добавить создание простой иконки
+        }
+        
+    - name: Build Windows executable
+      run: npm run build:win
+      
+    - name: List build artifacts
+      run: dir build\
+      
+    - name: Upload Windows installer
+      uses: actions/upload-artifact@v3
+      with:
+        name: KernelBrowser-Windows
+        path: build/*.exe
+        retention-days: 7
+EOF

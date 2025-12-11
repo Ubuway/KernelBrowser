@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kernel Browser Android</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Адаптация для мобильных */
+        .mobile-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1a1a2e;
+            display: flex;
+            padding: 10px;
+            z-index: 1000;
+        }
+        .mobile-nav button {
+            flex: 1;
+            background: rgba(0,102,255,0.2);
+            border: 1px solid #0066ff;
+            color: #00ccff;
+            padding: 12px;
+            margin: 0 5px;
+            border-radius: 10px;
+            font-size: 20px;
+        }
+        .browser-container {
+            padding-bottom: 70px;
+        }
+    </style>
+</head>
+<body>
+    <div class="browser-container">
+        <!-- Ваш существующий контент будет здесь -->
+        <div id="loadingScreen" class="loading-screen">
+            <div class="loading-content">
+                <div class="loading-logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div class="logo-text">Kernel</div>
+                </div>
+                <div class="loading-bar">
+                    <div class="loading-progress"></div>
+                </div>
+                <p style="margin-top: 20px; color: #666699;">Android версия</p>
+            </div>
+        </div>
+        
+        <div id="browserContainer" class="browser-container" style="display: none;">
+            <!-- Контент из index.html -->
+        </div>
+    </div>
+    
+    <!-- Мобильная навигация -->
+    <div class="mobile-nav">
+        <button onclick="window.history.back()">←</button>
+        <button onclick="window.location.reload()">↻</button>
+        <button onclick="window.open('about:blank', '_blank')">+</button>
+        <button onclick="window.open('https://google.com')">⌂</button>
+        <button onclick="alert('Настройки')">⚙</button>
+    </div>
+    
+    <script src="script.js"></script>
+    <script>
+        // Быстрая загрузка для Android
+        setTimeout(() => {
+            document.getElementById('loadingScreen').style.display = 'none';
+            document.getElementById('browserContainer').style.display = 'flex';
+        }, 1000);
+    </script>
+</body>
+</html>
