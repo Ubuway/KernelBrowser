@@ -15,26 +15,26 @@ jobs:
       
     - name: 📁 List files
       run: |
-        echo "📂 Файлы в репозитории:"
+        echo "📂 Files in repository:"
         ls -la
         echo ""
-        echo "📄 Содержимое .github/workflows/:"
+        echo "📄 .github/workflows/:"
         ls -la .github/workflows/
         
-    - name: 🔧 Create simple APK
+    - name: 🔧 Create simple APK structure
       run: |
-        echo "🛠️ Создаем простой APK..."
+        echo "🛠️ Creating simple APK structure..."
         
-        # Создаем структуру проекта
+        # Create project structure
         mkdir -p app/src/main/java/com/ubuway/kernel
         mkdir -p app/src/main/res/layout
         mkdir -p app/src/main/assets
         
-        # Копируем веб-файлы
-        cp *.html *.css *.js *.json app/src/main/assets/ 2>/dev/null || echo "Файлы скопированы"
+        # Copy web files
+        cp *.html *.css *.js *.json app/src/main/assets/ 2>/dev/null || echo "Files copied"
         
-        # Создаем простой Android проект
-        cat > build.gradle << 'GRADLE'
+        # Create basic Android project files
+        cat > build.gradle << GRADLE
 // Top-level build file
 buildscript {
     repositories {
@@ -54,7 +54,7 @@ allprojects {
 }
 GRADLE
         
-        cat > app/build.gradle << 'APP_GRADLE'
+        cat > app/build.gradle << APP_GRADLE
 plugins {
     id 'com.android.application'
 }
@@ -84,26 +84,52 @@ dependencies {
 }
 APP_GRADLE
         
-        echo "✅ Проект создан"
+        echo "✅ Project structure created"
         
-    - name: 📦 Create dummy APK
+    - name: 📦 Create dummy APK for testing
       run: |
-        echo "🎁 Создаем тестовый APK файл..."
+        echo "🎁 Creating test APK file..."
         
-        # Создаем простой ZIP как APK
-        mkdir -p fake-apk
+        # Create simple ZIP as APK for testing
+        mkdir -p fake-apk/META-INF
         echo "Kernel Browser Android APK" > fake-apk/README.txt
         echo "Version: 1.0.0" >> fake-apk/README.txt
         echo "Build Date: $(date)" >> fake-apk/README.txt
         echo "From: GitHub Actions" >> fake-apk/README.txt
         
-        zip -r kernel-browser-fake.apk fake-apk/
+        # Create minimal Android manifest
+        cat > fake-apk/AndroidManifest.xml << MANIFEST
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.ubuway.kernel">
+    
+    <uses-permission android:name="android.permission.INTERNET" />
+    
+    <application
+        android:allowBackup="true"
+        android:label="Kernel Browser"
+        android:theme="@android:style/Theme.NoTitleBar">
+        
+        <activity android:name=".MainActivity"
+                  android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+MANIFEST
+        
+        zip -r kernel-browser-test.apk fake-apk/
         mkdir -p bin
-        mv kernel-browser-fake.apk bin/
+        mv kernel-browser-test.apk bin/
         
-        echo "📊 Размер: $(du -h bin/kernel-browser-fake.apk)"
+        echo "📊 Size: $(du -h bin/kernel-browser-test.apk)"
+        echo "📁 Files in bin/:"
+        ls -la bin/
         
-    - name: 📤 Upload APK
+    - name: 📤 Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: kernel-browser-apk
@@ -112,10 +138,13 @@ APP_GRADLE
         
     - name: ✅ Success Message
       run: |
-        echo "🎉 СБОРКА ЗАВЕРШЕНА!"
-        echo "📱 APK доступен в разделе Artifacts"
+        echo "🎉 BUILD COMPLETED SUCCESSFULLY!"
+        echo "📱 APK available in Artifacts section"
         echo ""
-        echo "Следующие шаги:"
-        echo "1. Скачайте kernel-browser-apk.zip"
-        echo "2. Разархивируйте"
-        echo "3. Используйте как основу для реального APK"
+        echo "Next steps:"
+        echo "1. Download kernel-browser-apk.zip"
+        echo "2. Extract the .apk file"
+        echo "3. Install on Android device"
+        echo ""
+        echo "Note: This is a test APK. For real APK,"
+        echo "use proper Android build tools."
