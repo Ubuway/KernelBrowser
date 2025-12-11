@@ -1,27 +1,115 @@
-name: Build Android APK
+name: 🚀 Build Android APK
 
 on:
   push:
-    branches: [android-build]
+    branches: [ android-build ]
   workflow_dispatch:
 
 jobs:
-  build:
+  build-android:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout code
+    - name: 📥 Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup Android
-      uses: android-actions/setup-android@v3
-      
-    - name: Create WebView App
-      run: |
-        # Создаем простой Android проект
-        mkdir -p app/src/main/assets
-        cp -r *.html *.css *.js *.json app/src/main/assets/
+    - name: ⚙️ Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
         
+    - name: 📦 Build APK with WebView
+      run: |
+        echo "🛠️ Создаем Android проект..."
+        
+        # Создаем структуру Android проекта
+        mkdir -p app/src/main/assets
+        mkdir -p app/src/main/res/xml
+        
+        # Копируем все файлы браузера
+        cp *.html *.css *.js *.json app/src/main/assets/ 2>/dev/null || true
+        
+        # Создаем манифест
+        cat > app/src/main/AndroidManifest.xml << 'MANIFEST'
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.ubuway.kernel">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Kernel Browser"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+        android:usesCleartextTraffic="true">
+        
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+MANIFEST
+        
+        # Создаем Activity
+        cat > app/src/main/java/com/ubuway/kernel/MainActivity.java << 'JAVA'
+package com.ubuway.kernel;
+
+import android.os.Bundle;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
+    private WebView webView;
+    
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        
+        webView = findViewById(R.id.webview);
+        
+        WebSettings webSettings = webView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setDomStorageEnabled(true);
+        webSettings.setAllowFileAccess(true);
+        
+        webView.setWebViewClient(new WebViewClient());
+        webView.loadUrl("file:///android_asset/index.html");
+    }
+    
+    @Override
+    public void onBackPressed() {
+        if (webView.canGoBack()) {
+            webView.goBack();
+        } else {
+            super.onBackPressed();
+        }
+    }
+}
+JAVA
+        
+        # Создаем layout
+        cat > app/src/main/res/layout/activity_main.xml << 'XML'
+<?xml version="1.0" encoding="utf-8"?>
+<WebView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/webview"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" />
+XML
+        
+        # Создаем build.gradle
         cat > app/build.gradle << 'GRADLE'
 plugins {
     id 'com.android.application'
@@ -42,25 +130,75 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.webkit:webkit:1.8.0'
 }
 GRADLE
         
-    - name: Build APK
+        # Создаем корневой build.gradle
+        cat > build.gradle << 'ROOT'
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.1.2'
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+ROOT
+        
+        # Создаем gradle.properties
+        echo "org.gradle.jvmargs=-Xmx2048m" > gradle.properties
+        
+    - name: 🔨 Build APK
       run: |
         cd app
         ./gradlew assembleDebug
+        echo "✅ APK создан!"
         ls -la build/outputs/apk/debug/
         
-    - name: Upload APK
+    - name: 📤 Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: kernel-browser
+        name: kernel-browser-apk
         path: app/build/outputs/apk/debug/*.apk
+        retention-days: 7
+        
+    - name: 🏷️ Create Release
+      uses: softprops/action-gh-release@v1
+      if: success()
+      with:
+        tag_name: android-v1.0.${{ github.run_number }}
+        name: Kernel Android v1.0.${{ github.run_number }}
+        body: |
+          🚀 Android версия Kernel Browser
+          
+          Сборка #${{ github.run_number }} от ${{ github.event.head_commit.timestamp }}
+          
+          ### Как установить:
+          1. Скачайте APK ниже
+          2. На Android разрешите "Установку из неизвестных источников"
+          3. Установите и запустите
+          
+          ### Изменения:
+          - Автосборка через GitHub Actions
+          - Android WebView с вашим кодом
+          - Поддержка JavaScript
+        files: app/build/outputs/apk/debug/*.apk
