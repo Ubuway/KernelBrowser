@@ -1,0 +1,341 @@
+name: 🚀 Build Real Android APK
+
+on:
+  push:
+    branches: [build-android-20251211]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+      
+    - name: ⚙️ Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: 🔧 Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: 🏗️ Build Android Project
+      run: |
+        echo "=== 🛠️ Building REAL Android APK ==="
+        
+        # 1. Create project structure
+        echo "Creating Android project structure..."
+        mkdir -p app/src/main/{assets,java/com/ubuway/kernel,res/layout}
+        mkdir -p app/src/main/res/values
+        
+        # 2. Copy ALL browser files to assets
+        echo "Copying web files to assets..."
+        find . -maxdepth 1 -type f \( -name "*.html" -o -name "*.css" -o -name "*.js" -o -name "*.json" -o -name "*.png" -o -name "*.ico" -o -name "*.svg" \) \
+          -exec cp {} app/src/main/assets/ \;
+        
+        # 3. Create AndroidManifest.xml
+        echo "Creating AndroidManifest.xml..."
+        cat > app/src/main/AndroidManifest.xml << 'MANIFEST'
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.ubuway.kernel">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Kernel Browser"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+        android:usesCleartextTraffic="true"
+        android:hardwareAccelerated="true"
+        tools:targetApi="31">
+        
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode"
+            android:windowSoftInputMode="adjustResize"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+MANIFEST
+        
+        # 4. Create MainActivity.java
+        echo "Creating MainActivity.java..."
+        cat > app/src/main/java/com/ubuway/kernel/MainActivity.java << 'JAVA'
+package com.ubuway.kernel;
+
+import android.annotation.SuppressLint;
+import android.os.Bundle;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
+    private WebView webView;
+    
+    @SuppressLint("SetJavaScriptEnabled")
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        
+        webView = findViewById(R.id.webview);
+        
+        // Configure WebView
+        WebSettings webSettings = webView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setDomStorageEnabled(true);
+        webSettings.setDatabaseEnabled(true);
+        webSettings.setAllowFileAccess(true);
+        webSettings.setAllowContentAccess(true);
+        webSettings.setLoadWithOverviewMode(true);
+        webSettings.setUseWideViewPort(true);
+        webSettings.setBuiltInZoomControls(true);
+        webSettings.setDisplayZoomControls(false);
+        webSettings.setSupportZoom(true);
+        webSettings.setDefaultTextEncodingName("utf-8");
+        
+        // Set WebView client
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                view.loadUrl(url);
+                return true;
+            }
+        });
+        
+        // Load your HTML file
+        webView.loadUrl("file:///android_asset/index.html");
+    }
+    
+    @Override
+    public void onBackPressed() {
+        if (webView.canGoBack()) {
+            webView.goBack();
+        } else {
+            super.onBackPressed();
+        }
+    }
+}
+JAVA
+        
+        # 5. Create activity_main.xml layout
+        echo "Creating activity_main.xml..."
+        cat > app/src/main/res/layout/activity_main.xml << 'XML'
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <WebView
+        android:id="@+id/webview"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+XML
+        
+        # 6. Create strings.xml
+        echo "Creating strings.xml..."
+        cat > app/src/main/res/values/strings.xml << 'STRINGS'
+<resources>
+    <string name="app_name">Kernel Browser</string>
+    <string name="action_settings">Settings</string>
+</resources>
+STRINGS
+        
+        # 7. Create build.gradle files
+        echo "Creating Gradle build files..."
+        
+        # Root build.gradle
+        cat > build.gradle << 'ROOT_GRADLE'
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.1.2'
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+ROOT_GRADLE
+        
+        # App build.gradle
+        cat > app/build.gradle << 'APP_GRADLE'
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.ubuway.kernel'
+    compileSdk 34
+    
+    defaultConfig {
+        applicationId "com.ubuway.kernel"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+        
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            debuggable true
+            applicationIdSuffix '.debug'
+            versionNameSuffix '-DEBUG'
+        }
+    }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    
+    buildFeatures {
+        viewBinding true
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.webkit:webkit:1.8.0'
+    
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
+APP_GRADLE
+        
+        # gradle.properties
+        echo "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8" > gradle.properties
+        echo "android.useAndroidX=true" >> gradle.properties
+        echo "android.enableJetifier=true" >> gradle.properties
+        
+        # settings.gradle
+        echo "include ':app'" > settings.gradle
+        
+        echo "✅ Android project structure created successfully!"
+        echo "📁 Project size: $(du -sh .)"
+        
+    - name: 🔨 Build APK with Gradle
+      run: |
+        echo "=== 🏗️ Building APK with Gradle ==="
+        
+        # Make gradlew executable
+        chmod +x ./gradlew 2>/dev/null || echo "Using system gradle"
+        
+        # Build debug APK
+        ./gradlew assembleDebug --stacktrace --info
+        
+        echo "📊 Build output:"
+        find . -name "*.apk" -type f | xargs ls -lh
+        
+    - name: 📦 Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: kernel-browser-apk
+        path: app/build/outputs/apk/debug/*.apk
+        retention-days: 90
+        
+    - name: 📋 Upload Build Logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs
+        path: |
+          app/build/outputs/logs/
+          app/build/reports/
+        retention-days: 30
+        
+    - name: 🏷️ Create GitHub Release
+      if: success()
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: android-v1.0.${{ github.run_number }}
+        name: Kernel Browser Android v1.0.${{ github.run_number }}
+        body: |
+          🚀 **Real Android APK Build** - Powered by GitHub Actions
+          
+          ### 📱 Installation:
+          1. Download the APK below
+          2. On Android: Settings → Security → Unknown sources (Enable)
+          3. Install APK
+          4. Launch "Kernel Browser"
+          
+          ### 🔧 Build Details:
+          - **Version**: 1.0.${{ github.run_number }}
+          - **Date**: ${{ github.event.head_commit.timestamp }}
+          - **Branch**: ${{ github.ref }}
+          - **Commit**: ${{ github.sha }}
+          
+          ### 🛠️ Features:
+          - WebView with JavaScript enabled
+          - Full hardware acceleration
+          - Back button navigation
+          - Fullscreen browser
+          - Android 5.0+ (API 21) compatible
+          
+          ### 📊 File Info:
+          - APK size: ~10-15MB
+          - Target SDK: 34 (Android 14)
+          - Min SDK: 21 (Android 5.0)
+        files: app/build/outputs/apk/debug/*.apk
+        
+    - name: ✅ Build Success
+      if: success()
+      run: |
+        echo "🎉 🎉 🎉 BUILD SUCCESSFUL! 🎉 🎉 🎉"
+        echo "📱 APK is ready in the 'Artifacts' section below"
+        echo "📦 Download link will appear in the Release section"
