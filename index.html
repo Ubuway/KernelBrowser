@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0a0a1a">
+    <title>Kernel Browser • Powered by Ubuway</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+    
+    <style>
+        /* Убираем все PWA и установочные скрипты */
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Улучшаем загрузку */
+        #loadingScreen {
+            transition: opacity 0.5s ease;
+        }
+        
+        /* Скрываем ненужные элементы на мобильных */
+        @media screen and (max-width: 768px) {
+            .window-controls {
+                display: none !important;
+            }
+            
+            .nav-bar .nav-btn:nth-child(6),
+            .nav-bar .nav-btn:nth-child(7) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Загрузка -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <div class="logo-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <div class="logo-text">Kernel</div>
+            </div>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Браузер -->
+    <div class="browser-container" id="browserContainer" style="display:none;">
+        <!-- Верхняя панель -->
+        <div class="top-bar">
+            <div class="logo">
+                <i class="fas fa-bolt"></i>
+                <span>Kernel Browser</span>
+            </div>
+            <div class="window-controls">
+                <button onclick="minimize()">_</button>
+                <button onclick="maximize()">□</button>
+                <button onclick="closeApp()">✕</button>
+            </div>
+        </div>
+        
+        <!-- Панель вкладок -->
+        <div class="tabs-bar" id="tabsBar">
+            <button class="new-tab-btn" onclick="createNewTab()" title="Новая вкладка">
+                <i class="fas fa-plus"></i>
+            </button>
+            <div class="tabs-container" id="tabsContainer">
+                <!-- Вкладки будут добавлены через JS -->
+            </div>
+        </div>
+        
+        <!-- Панель навигации -->
+        <div class="nav-bar">
+            <button class="nav-btn" onclick="goBack()" id="backBtn" title="Назад">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <button class="nav-btn" onclick="goForward()" id="forwardBtn" title="Вперед">
+                <i class="fas fa-arrow-right"></i>
+            </button>
+            <button class="nav-btn" onclick="reload()" title="Обновить">
+                <i class="fas fa-redo"></i>
+            </button>
+            <button class="nav-btn" onclick="goHome()" title="Домашняя страница">
+                <i class="fas fa-home"></i>
+            </button>
+            
+            <!-- Выбор поисковой системы -->
+            <select class="search-engine-select" id="searchEngineSelect" onchange="changeSearchEngine(this.value)" title="Поисковая система">
+                <option value="bing">🔍 Bing</option>
+                <option value="duckduckgo">🦆 DuckDuckGo</option>
+                <option value="google">G Google</option>
+                <option value="yandex">Я Yandex</option>
+            </select>
+            
+            <input type="text" class="url-bar" placeholder="Введите адрес или поисковый запрос..." id="urlInput" autocomplete="off">
+            
+            <button class="nav-btn" onclick="searchCurrent()" title="Перейти">
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+        
+        <!-- Контейнер контента -->
+        <div class="content-container" id="contentContainer">
+            <!-- Содержимое будет добавлено через JS -->
+        </div>
+        
+        <!-- Статус бар -->
+        <div class="status-bar">
+            <span id="statusText">Готов</span>
+            <span id="pageTitle">Kernel Browser</span>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    
+    <!-- Упрощенный скрипт инициализации -->
+    <script>
+        // Убираем весь PWA код
+        
+        // Определяем мобильное устройство
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        // Скрываем window-controls на мобильных
+        if (isMobile) {
+            document.addEventListener('DOMContentLoaded', function() {
+                const windowControls = document.querySelector('.window-controls');
+                if (windowControls) {
+                    windowControls.style.display = 'none';
+                }
+            });
+        }
+        
+        // Для дебага
+        console.log('🌐 Kernel Browser запущен');
+        console.log('📱 Мобильный:', isMobile);
+    </script>
+</body>
+</html>
