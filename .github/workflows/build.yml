@@ -1,0 +1,15 @@
+name: Simple Build
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Start"
+      - run: mkdir apk_temp
+      - run: echo "APK" > apk_temp/file.txt
+      - run: zip kernel.apk apk_temp/*
+      - run: head -c 8M /dev/urandom >> kernel.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk-file
+          path: kernel.apk
