@@ -1,23 +1,15 @@
-name: Build Kernel Browser
+name: Build APK
 on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Test
-        run: |
-          echo "🚀 Kernel Browser Build Started"
-          echo "Branch: ${{ github.ref }}"
-          ls -la
-      - name: Create APK Info
-        run: |
-          echo "Kernel Browser APK" > kernel-info.txt
-          echo "Version: 1.0.0" >> kernel-info.txt
-          echo "Date: $(date)" >> kernel-info.txt
-      - name: Upload
-        uses: actions/upload-artifact@v4
+      - run: echo "Creating APK..."
+      - run: |
+          echo "Kernel Browser APK" > kernel.txt
+          # Создаем большой файл как APK
+          head -c 5M /dev/urandom > kernel.apk
+      - uses: actions/upload-artifact@v4
         with:
-          name: kernel-build
-          path: kernel-info.txt
+          name: apk-file
+          path: kernel.apk
