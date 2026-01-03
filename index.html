@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#000000">
+    
+    <title>Kernel Browser • Powered by Ubuway</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Иконки -->
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    
+    <style>
+        /* Анимации загрузки */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Кастомный скроллбар */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--secondary-bg);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 5px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <!-- Экран загрузки -->
+    <div id="loadingScreen">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <i class="fas fa-bolt"></i>
+                <span>Kernel</span>
+            </div>
+            <div class="loading-subtitle">Powered by Ubuway</div>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+            <div class="loading-stats">
+                <span id="loadingStatus">Инициализация...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Главное приложение -->
+    <div id="app" style="display: none;">
+        <!-- Заголовок окна -->
+        <div class="window-titlebar">
+            <div class="window-drag-area" id="windowDrag"></div>
+            <div class="window-title" id="windowTitle">Kernel Browser</div>
+            <div class="window-controls">
+                <button class="window-btn" id="minimizeBtn" title="Свернуть">
+                    <i class="fas fa-window-minimize"></i>
+                </button>
+                <button class="window-btn" id="maximizeBtn" title="Развернуть">
+                    <i class="fas fa-window-maximize"></i>
+                </button>
+                <button class="window-btn close" id="closeBtn" title="Закрыть">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Панель инструментов -->
+        <div class="toolbar">
+            <div class="toolbar-group">
+                <button class="toolbar-btn" id="backBtn" title="Назад (Alt+←)">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="toolbar-btn" id="forwardBtn" title="Вперед (Alt+→)">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                <button class="toolbar-btn" id="reloadBtn" title="Обновить (F5)">
+                    <i class="fas fa-redo"></i>
+                </button>
+                <button class="toolbar-btn" id="homeBtn" title="Домой">
+                    <i class="fas fa-home"></i>
+                </button>
+            </div>
+
+            <div class="url-container">
+                <div class="url-bar-wrapper">
+                    <div class="url-security" id="urlSecurity">
+                        <i class="fas fa-lock" id="securityIcon"></i>
+                    </div>
+                    <input type="text" 
+                           class="url-bar" 
+                           id="urlBar" 
+                           placeholder="Введите адрес или поисковый запрос..."
+                           spellcheck="false"
+                           autocomplete="off">
+                    <div class="url-actions">
+                        <button class="url-action-btn" id="bookmarkBtn" title="Добавить в закладки">
+                            <i class="far fa-star"></i>
+                        </button>
+                        <button class="url-action-btn" id="clearBtn" title="Очистить">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="toolbar-group">
+                <button class="toolbar-btn" id="newTabBtn" title="Новая вкладка (Ctrl+T)">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button class="toolbar-btn" id="menuBtn" title="Меню">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Панель вкладок -->
+        <div class="tabs-container" id="tabsContainer">
+            <button class="add-tab-btn" id="addTabBtn" title="Новая вкладка">
+                <i class="fas fa-plus"></i>
+            </button>
+            <div class="tabs-scroll">
+                <div class="tabs-list" id="tabsList"></div>
+            </div>
+        </div>
+
+        <!-- Контейнер контента -->
+        <div class="content-container" id="contentContainer">
+            <!-- WebView/Iframe будет вставлен здесь -->
+        </div>
+
+        <!-- Статус бар -->
+        <div class="status-bar">
+            <div class="status-left">
+                <span class="status-icon" id="securityStatus">
+                    <i class="fas fa-lock"></i>
+                </span>
+                <span id="pageTitle">Готов</span>
+            </div>
+            <div class="status-right">
+                <span class="status-item" id="zoomLevel">100%</span>
+                <span class="status-item" id="statusText">Готов</span>
+                <span class="status-item" id="connectionStatus">
+                    <i class="fas fa-wifi"></i>
+                </span>
+            </div>
+        </div>
+
+        <!-- Контекстное меню -->
+        <div class="context-menu" id="contextMenu">
+            <div class="menu-section">
+                <div class="menu-item" data-action="back">
+                    <i class="fas fa-arrow-left"></i>
+                    Назад
+                    <span class="menu-shortcut">Alt+←</span>
+                </div>
+                <div class="menu-item" data-action="forward">
+                    <i class="fas fa-arrow-right"></i>
+                    Вперед
+                    <span class="menu-shortcut">Alt+→</span>
+                </div>
+                <div class="menu-item" data-action="reload">
+                    <i class="fas fa-redo"></i>
+                    Обновить
+                    <span class="menu-shortcut">F5</span>
+                </div>
+            </div>
+            
+            <div class="menu-divider"></div>
+            
+            <div class="menu-section">
+                <div class="menu-item" data-action="new-tab">
+                    <i class="fas fa-plus"></i>
+                    Новая вкладка
+                    <span class="menu-shortcut">Ctrl+T</span>
+                </div>
+                <div class="menu-item" data-action="duplicate-tab">
+                    <i class="fas fa-copy"></i>
+                    Дублировать вкладку
+                </div>
+                <div class="menu-item" data-action="close-tab">
+                    <i class="fas fa-times"></i>
+                    Закрыть вкладку
+                    <span class="menu-shortcut">Ctrl+W</span>
+                </div>
+            </div>
+            
+            <div class="menu-divider"></div>
+            
+            <div class="menu-section">
+                <div class="menu-item" data-action="bookmark">
+                    <i class="far fa-star"></i>
+                    Добавить в закладки
+                    <span class="menu-shortcut">Ctrl+D</span>
+                </div>
+                <div class="menu-item" data-action="save-page">
+                    <i class="fas fa-save"></i>
+                    Сохранить страницу
+                </div>
+                <div class="menu-item" data-action="print">
+                    <i class="fas fa-print"></i>
+                    Печать
+                    <span class="menu-shortcut">Ctrl+P</span>
+                </div>
+            </div>
+            
+            <div class="menu-divider"></div>
+            
+            <div class="menu-section">
+                <div class="menu-item" data-action="inspect">
+                    <i class="fas fa-code"></i>
+                    Инспектировать элемент
+                </div>
+                <div class="menu-item" data-action="view-source">
+                    <i class="fas fa-file-code"></i>
+                    Просмотреть исходный код
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно настроек -->
+        <div class="modal" id="settingsModal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-cog"></i> Настройки</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="settings-tabs">
+                        <button class="settings-tab active" data-tab="general">Общие</button>
+                        <button class="settings-tab" data-tab="appearance">Внешний вид</button>
+                        <button class="settings-tab" data-tab="privacy">Приватность</button>
+                        <button class="settings-tab" data-tab="advanced">Дополнительно</button>
+                    </div>
+                    
+                    <div class="settings-content">
+                        <!-- Контент будет заполнен JavaScript -->
+                    </div>
+                    
+                    <div class="settings-footer">
+                        <button class="btn btn-primary" id="saveSettings">Сохранить</button>
+                        <button class="btn btn-secondary" id="resetSettings">Сбросить</button>
+                        <button class="btn btn-text" id="cancelSettings">Отмена</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Уведомления -->
+        <div class="notifications-container" id="notifications"></div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="renderer.js"></script>
+    
+    <!-- PWA Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker зарегистрирован:', reg))
+                .catch(err => console.log('Ошибка регистрации:', err));
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+{
+  "name": "kernel-browser",
+  "version": "1.1.0",
+  "description": "Professional browser with Web/Electron support",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "web": "npx http-server -p 3000",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "build:all": "npm run build:win && npm run build:mac && npm run build:linux"
+  },
+  "build": {
+    "appId": "com.ubuway.kernel",
+    "productName": "Kernel Browser",
+    "copyright": "Copyright © 2024 Ubuway",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/*",
+      "!*.log",
+      "!dist/*"
+    ],
+    "win": {
+      "target": ["nsis", "portable", "zip"],
+      "icon": "assets/icon.ico",
+      "publisherName": "Ubuway"
+    },
+    "mac": {
+      "target": ["dmg", "zip"],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": ["AppImage", "deb", "rpm", "snap"],
+      "icon": "assets/icon.png",
+      "category": "Network",
+      "maintainer": "Ubuway <ubuway@example.com>"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Kernel Browser",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico"
+    }
+  },
+  "keywords": [
+    "browser",
+    "electron",
+    "kernel",
+    "ubuway",
+    "webview",
+    "chromium",
+    "internet"
+  ],
+  "author": "Ubuway",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^25.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0"
+  }
+}
